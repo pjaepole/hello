@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Data;
 using Dapper;
+using hello.Data;
 using hello.Models;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 namespace hello
 {
@@ -11,39 +13,56 @@ namespace hello
     {
         static void Main(string[] args)
         {
-            //windwos authentication
-            string connectionString = "Server=localhost;Database=DotNetCourseDatabase; TrustServerCertificate=true;Trusted_Connection=true;";
+            IConfiguration config = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json")
+                .Build();
 
-            //If using mac or linux
-            //Need to set 
-            //Trusted_Connection=false
-            //User Id=sa;Password=Password123
-            // string connectionString = "Server=localhost;Database=DotNetCourseDatabase; TrustServerCertificate=true;Trusted_Connection=false;User Id=sa;Password=Password123";
+            DataContextDapper dapper = new DataContextDapper(config);
+            DataContextEF entityFramework = new DataContextEF(config);
 
+            DateTime rightNow = dapper.LoadDataSingle<DateTime>("SELECT GETDATE()");
 
-
-            IDbConnection dbConnection = new SqlConnection(connectionString);
-
-            string sqlCommand = "SELECT GETDATE()";
-
-            DateTime rightNow = dbConnection.QuerySingle<DateTime>(sqlCommand);
-            Console.WriteLine(rightNow);
+            // Console.WriteLine(rightNow);
 
             Computer myComputer = new Computer()
             {
-                Motherboard = "ASUS",
-                CPUCores = 4,
+                Motherboard = "Z690",
                 HasWifi = true,
                 HasLTE = false,
                 ReleaseDate = DateTime.Now,
-                Price = 1000.00M,
-                VideoCard = "Nvidia"
+                Price = 943.78M,
+                VideoCard = "RTX 2060"
             };
-            // Console.WriteLine(myComputer.Motherboard);
-            // Console.WriteLine(myComputer.VideoCard);
-            // Console.WriteLine(myComputer.Price);
-            // Console.WriteLine(myComputer.ReleaseDate);
 
+
+
+            string sql = @"INSERT INTO TutorialAppSchema.Computer(
+                Motherboard,
+                HasWifi,
+                HasLTE,
+                ReleaseDate,
+                Price,
+                VideoCard 
+            ) VALUES ('" + myComputer.Motherboard
+             + "', '" + myComputer.HasWifi
+             + "', '" + myComputer.HasLTE
+             + "', '" + myComputer.ReleaseDate
+             + "', '" + myComputer.Price
+             + "', '" + myComputer.VideoCard
+             + "')";
+
+
+            File.WriteAllText("log.txt", "\n" + sql + "\n");
+
+            using StreamWriter openFile = new("log.txt", append: true);
+
+            openFile.WriteLine("\n" + sql + "\n");
+
+            openFile.Close();
+
+            string fileText = File.ReadAllText("log.txt");
+
+            Console.WriteLine(fileText);
         }
     }
 }
